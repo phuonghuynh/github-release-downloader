@@ -1,5 +1,7 @@
 # github-release-downloader
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/practicaljs/github-release-downloader.svg)](https://greenkeeper.io/)
+
 # Installation
 
 Installing the cli tool is as easy as this:
