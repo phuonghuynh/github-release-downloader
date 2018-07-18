@@ -1,12 +1,11 @@
-'use strict'
-require("babel-polyfill")
-const path = require('path')
+'use strict';
+
+require("babel-polyfill");
+
 const {
   GitHub
-} = require('./github')
-const {
-  DownloadsScheduler
-} = require('./download')
+} = require('./github');
+
 const yargs = require('yargs')
   .usage('$0 <cmd> [args]')
   .option('token', {
@@ -21,34 +20,22 @@ const yargs = require('yargs')
     describe: 'The repository to download',
     required: true
   })
-  .option('output', {
-    alias: 'o',
-    describe: 'output path where to download assets',
-    default: process.cwd() 
-  })
-  .option('min-version', {
-    alias: 'm',
-    describe: 'minimum semver version to consider',
-    default: 'v0.0.0-alpha'
+  .option('tag', {
+    describe: 'The tag name to download',
+    required: true
   })
   .option('filter-asset', {
-    describe: 'the assets we\'re interested in keeping'
+    describe: 'the assets we\'re interested in keeping (RegExp)'
   })
-  .option('parallel', {
-    alias: 'p',
-    describe: 'number of parallel downloads',
-    default: 3
-  })
-  .coerce(['output'], path.resolve)
   .coerce(['filter-asset'], (arg) => {
     return new RegExp(arg)
   })
-  .help()
+  .help();
 
 function fatalError(error) {
   if (error.response) {
-    const status = error.response.status
-    let body = error.response.data
+    const status = error.response.status;
+    let body = error.response.data;
     if (body && body.constructor === Buffer) {
       body = body.toString('utf8')
     }
@@ -61,23 +48,20 @@ function fatalError(error) {
 
 async function main(argv) {
   try {
-    const api = new GitHub(argv.token)
-    const dest = path.join(argv.output, argv.owner, argv.repository)
-    const downloader = new DownloadsScheduler(dest, argv.parallel)
+    const api = new GitHub(argv.token);
+
+    let assets = [];
     for await (const release of api.getReleases(argv.owner, argv.repository, argv.minVersion, argv.filterAsset)) {
-      console.log(`releases ${release.name}\tassets count: ${release.assets.length}`)
-      for (const asset of release.assets) {
-        downloader.enqueue({
-          id: asset.id,
-          filename: `${release.name}/${asset.name}`,
-          url: asset.url
-        })
+
+      for (const ass of release.assets) {
+        assets.push(ass)
       }
-      await downloader.start()
     }
+
+    return assets;
   } catch (error) {
     fatalError(error)
   }
 }
 
-main(yargs.argv)
+main(yargs.argv);
